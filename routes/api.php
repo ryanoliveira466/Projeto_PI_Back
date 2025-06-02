@@ -54,6 +54,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/users/public', [UserController::class, 'publicIndex']); //Search bar user
 Route::get('/user/slug/{slug}', [UserController::class, 'showBySlug']); //Profile user public link for each
 
+Route::get('/projects/public', [PostController::class, 'publicIndex']); //Search bar projects
 Route::get('/projects/user/{slug}', [PostController::class, 'userProjects']); //Projects of the user public on member page
 Route::get('/project/slug/{userSlug}/{projectSlug}', [PostController::class, 'showBySlug']); //Projects user public link for each
 

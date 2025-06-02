@@ -170,7 +170,7 @@ class UserController extends Controller
     {
 
         try {
-            $users = User::select('name', 'email', 'slug')->get();
+            $users = User::select('name', 'email', 'slug', 'photo')->get();
 
             return response()->json([
                 'success' => true,

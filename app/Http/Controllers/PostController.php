@@ -79,13 +79,13 @@ class PostController extends Controller
                 'projectsCount' => $projects->count(),
                 'projects' => $projects,
                 'userSlug' => $user->slug
-            ],200);
+            ], 200);
         } catch (\Exception $error) {
             return response()->json([
                 'success' => false,
                 'message' => "Failed to select posts of user profile",
                 'error' => $error->getMessage(),
-            ],500);
+            ], 500);
         }
     }
 
@@ -105,13 +105,39 @@ class PostController extends Controller
                 'userSlug' => $user->slug,
                 'userName' => $user->name,
                 'userImage' => $user->photo
-            ],200);
+            ], 200);
         } catch (\Exception $error) {
             return response()->json([
                 'success' => false,
                 'message' => "Failed to select Post for editing from user profile",
                 'error' => $error->getMessage(),
-            ],500);
+            ], 500);
+        }
+    }
+
+
+
+    //
+    public function publicIndex()
+    {
+
+        try {
+            $posts = Post::with(['user:id,name,slug,photo,email'])
+                ->select('user_id', 'name', 'description', 'javascript', 'css', 'html', 'slug', 'photo')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Posts listed successfully',
+                'postsCount' => $posts->count(),
+                'posts' => $posts
+            ], 200);
+        } catch (\Exception $error) {
+            return response()->json([
+                'success' => false,
+                'message' => "Failed to list posts",
+                'error' => $error->getMessage(),
+            ], 500);
         }
     }
 
@@ -127,13 +153,13 @@ class PostController extends Controller
                 'message' => 'Posts from user listed successfully by slug',
                 'projectsCount' => $projects->count(),
                 'projects' => $projects
-            ],200);
+            ], 200);
         } catch (\Exception $error) {
             return response()->json([
                 'success' => false,
                 'message' => "Failed to select posts of user by slug",
                 'error' => $error->getMessage(),
-            ],500);
+            ], 500);
         }
     }
 
@@ -142,8 +168,8 @@ class PostController extends Controller
     public function showBySlug($userSlug, $projectSLug)
     {
         try {
-            $user = User::select('id','name','photo')->where('slug', $userSlug)->firstOrFail();;
-            $project = Post::select('name', 'description', 'javascript', 'css', 'html' , 'photo')->where('slug', $projectSLug)->where('user_id', $user->id)->firstOrFail();
+            $user = User::select('id', 'name', 'photo')->where('slug', $userSlug)->firstOrFail();;
+            $project = Post::select('name', 'description', 'javascript', 'css', 'html', 'photo')->where('slug', $projectSLug)->where('user_id', $user->id)->firstOrFail();
             return response()->json([
                 'success' => true,
                 'message' => 'Post from user listed successfully by slug',
@@ -151,14 +177,13 @@ class PostController extends Controller
                 'project' => $project,
                 'userName' => $user->name,
                 'userImage' => $user->photo
-            ],200);
+            ], 200);
         } catch (\Exception $error) {
             return response()->json([
                 'success' => false,
                 'message' => "Failed to select post of user by slug",
                 'error' => $error->getMessage(),
-            ],500);
+            ], 500);
         }
     }
-
 }
