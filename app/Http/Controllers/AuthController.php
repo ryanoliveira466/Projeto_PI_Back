@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class AuthController extends Controller
@@ -342,7 +343,8 @@ class AuthController extends Controller
                     'javascript' => 'required',
                     'css' => 'required',
                     'html' => 'required',
-                    'photo' => 'required'
+                    'photo' => 'required',
+                    'tags' => 'required'
                 ],
                 [
                     'name.required' => 'The name field is required',
@@ -350,7 +352,8 @@ class AuthController extends Controller
                     'javascript.required' => 'The javascript field is required',
                     'css.required' => 'The css field is required',
                     'html.required' => 'The html field is required',
-                    'photo.required' => 'The photo filed is required'
+                    'photo.required' => 'The photo filed is required',
+                    'tags.required' => 'The tag filed is required',
                 ]
             );
 
@@ -361,7 +364,8 @@ class AuthController extends Controller
                 'javascript' => $request->javascript,
                 'css' => $request->css,
                 'html' => $request->html,
-                'photo' => $request->photo
+                'photo' => $request->photo,
+                'tags' => $request->tags
             ]);
 
 
@@ -412,7 +416,8 @@ class AuthController extends Controller
                     'javascript' => 'required',
                     'css' => 'required',
                     'html' => 'required',
-                    'photo' => 'required'
+                    'photo' => 'required',
+                    'tags' => 'required'
                 ],
                 [
                     'name.required' => 'The name field is required',
@@ -420,7 +425,8 @@ class AuthController extends Controller
                     'javascript.required' => 'The javascript field is required',
                     'css.required' => 'The css field is required',
                     'html.required' => 'The html field is required',
-                    'photo.required' => 'The photo filed is required'
+                    'photo.required' => 'The photo filed is required',
+                    'tags.requires' => 'The tag field is required'
                 ]
             );
 
@@ -433,7 +439,8 @@ class AuthController extends Controller
                 'javascript' => $request->javascript,
                 'css' => $request->css,
                 'html' => $request->html,
-                'photo' => $request->photo
+                'photo' => $request->photo,
+                'tags' => $request->tags
             ]);
 
             return response()->json([
@@ -445,6 +452,126 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error while updating',
+                'error' => $error->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function likeContent(Request $request, $projectSlug)
+    {
+
+        try {
+            $user = $request->user();
+            $post = Post::where('slug', $projectSlug)->firstOrFail();
+            if ($user->likedPosts()->where('post_id', $post->id)->exists()) {
+                $user->likedPosts()->detach($post->id);
+                $post->decrement('likes');
+                $liked = false;
+            } else {
+                $user->likedPosts()->attach($post->id);
+                $post->increment('likes');
+                $liked = true;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Success with the like system',
+                $liked,
+                'post' => $post,
+                'liked' => $liked,
+            ], 201);
+        } catch (\Exception $error) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error with the like system',
+                'error' => $error->getMessage(),
+            ], 500);
+        }
+    }
+
+
+    public function trackView(Request $request, $projectSlug)
+    {
+        try {
+            $post = Post::where('slug', $projectSlug)->firstOrFail();
+            $user = $request->user();
+            $ip = $request->ip();
+
+            $hasViewed = DB::table('views')
+                ->where('post_id', $post->id)
+                ->where(function ($query) use ($user, $ip) {
+                    if ($user) {
+                        $query->where('user_id', $user->id);
+                    } else {
+                        $query->where('ip_address', $ip);
+                    }
+                })
+                ->exists();
+
+            if (!$hasViewed) {
+                DB::table('views')->insert([
+                    'post_id' => $post->id,
+                    'user_id' => $user?->id,
+                    'ip_address' => $user ? null : $ip,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $post->increment('views');
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'View system went successfully',
+            ], 201);
+        } catch (\Exception $error) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error with view system ',
+                'error' => $error->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function followUser(Request $request, $userSlug)
+    {
+        try {
+            $user = $request->user(); // the follower
+            $userFollowed = User::where('slug', $userSlug)->firstOrFail(); // the followed
+
+            $hasFollowed = DB::table('followers')
+                ->where('user_id', $user->id)
+                ->where('followed_user_id', $userFollowed->id)
+                ->exists();
+
+            if ($hasFollowed) {
+                // Unfollow
+                DB::table('followers')
+                    ->where('user_id', $user->id)
+                    ->where('followed_user_id', $userFollowed->id)
+                    ->delete();
+
+                $userFollowed->decrement('followers');
+            } else {
+                // Follow
+                DB::table('followers')->insert([
+                    'user_id' => $user->id,
+                    'followed_user_id' => $userFollowed->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $userFollowed->increment('followers');
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Success with the follow system'
+            ], 201);
+        } catch (\Exception $error) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error with the follow system',
                 'error' => $error->getMessage(),
             ], 500);
         }
