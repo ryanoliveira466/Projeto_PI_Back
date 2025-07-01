@@ -44,6 +44,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/myProjects', [PostController::class, 'myProjects']);
     Route::get('/user/myProject/{projectSlug}', [PostController::class, 'myProject']);
     Route::post('/user/update-content/{projectSlug}', [AuthController::class, 'updateContent']);
+    Route::delete('/user/destroy/{id}', [UserController::class,'destroy']);
 });
 
 // Like, view and follow system
@@ -65,6 +66,7 @@ Route::get('/projects/public', [PostController::class, 'publicIndexQuery']); //S
 Route::get('/projects/user', [PostController::class, 'userProjects']); //Projects of the user public on member page
 Route::get('/project/slug/{userSlug}/{projectSlug}', [PostController::class, 'showBySlug']); //Projects user public link for each
 
+Route::get('/listFollowers', [UserController::class,'listFollowers']);
 
 
 
