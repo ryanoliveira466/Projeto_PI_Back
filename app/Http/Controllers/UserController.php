@@ -26,7 +26,7 @@ class UserController extends Controller
         } catch (\Exception $error) {
             return response()->json([
                 'success' => false,
-                'message' => "Failed to delete user",
+                'message' => "Failed to list user",
                 'error' => $error->getMessage(),
             ], 500);
         }
@@ -266,4 +266,58 @@ class UserController extends Controller
             ], 500);
         }
     }
+
+    public function listFollowers(string $id){
+    
+
+        try {
+            $users = DB::table('followers')
+            ->join('users','followers.user_id', '=','users.id')
+            ->select('users.id','users.name')
+            ->where('followed_user_id','=',$id)
+            ->get();
+    
+    
+            return response()->json([
+                'resultado' => $users
+            ]);
+        } catch (\Exception $error) {
+            return response()->json([
+                'success' => false,
+                'message' => "Failed to list followed users",
+                'error' => $error->getMessage(),
+            ], 500);
+        }
+
+
+
+    }
+
+    public function listFollowing(string $id){
+    
+
+        try {
+            $users = DB::table('followers')
+        ->join('users','followers.followed_user_id', '=','users.id')
+        ->select('users.id','users.name')
+        ->where('user_id','=',$id)
+        ->get();
+
+
+        return response()->json([
+            'resultado' => $users
+        ]);
+        } catch (\Exception $error) {
+            return response()->json([
+                'success' => false,
+                'message' => "Failed to list following users",
+                'error' => $error->getMessage(),
+            ], 500);
+        }
+
+        
+
+
+    }
+    
 }

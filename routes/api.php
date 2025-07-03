@@ -51,6 +51,8 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::post('/user/likeContent/{projectSlug}', [AuthController::class, 'likeContent']);
 Route::post('/user/viewProject/{projectSlug}', [AuthController::class, 'trackView']);
 Route::post('/user/followUser/{userSlug}', [AuthController::class, 'followUser']);
+Route::get('/user/listFollowers/{id}', [UserController::class, 'listFollowers']);
+Route::get('/user/listFollowing/{id}', [UserController::class, 'listFollowing']);
 
 // TEST RESTFUL Commands
 Route::resource('/user', UserController::class);
