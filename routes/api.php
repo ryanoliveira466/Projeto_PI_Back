@@ -44,7 +44,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/myProjects', [PostController::class, 'myProjects']);
     Route::get('/user/myProject/{projectSlug}', [PostController::class, 'myProject']);
     Route::post('/user/update-content/{projectSlug}', [AuthController::class, 'updateContent']);
-    Route::delete('/user/destroy/{id}', [UserController::class,'destroy']);
+    //Precisa fazer o script do front-end pegar o slug do user/projeto respectivamente
+    Route::delete('/user/destroy/{slug}', [UserController::class,'destroy']);
+    Route::delete('/post/destroy/{slug}', [PostController::class,'destroy']);//Fazer verificação se o usuário conectado é equivalente ao usuário que criou o projeto
 });
 
 // Like, view and follow system
@@ -56,6 +58,9 @@ Route::get('/user/listFollowing/{id}', [UserController::class, 'listFollowing'])
 
 // TEST RESTFUL Commands
 Route::resource('/user', UserController::class);
+
+//TEST DOS POSTS
+Route::get('/post/index', [PostController::class, 'index']);
 
 // PUBLIC routes
 Route::post('/register', [AuthController::class, 'register']);

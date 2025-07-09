@@ -14,7 +14,23 @@ class PostController extends Controller
      */
     public function index()
     {
-        //
+
+        try {
+            $users = Post::all();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Users listed successfully',
+                'usersCount' => $users->count(),
+                'users' => $users
+            ], 200);
+        } catch (\Exception $error) {
+            return response()->json([
+                'success' => false,
+                'message' => "Failed to list user",
+                'error' => $error->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -60,9 +76,22 @@ class PostController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(string $slug)
     {
-        //
+        try {
+            $post = Post::findOrFail($slug);
+            $post->delete();
+            return response()->json([
+                'success' => true,
+                'message' => "User $post->name deleted successfully",
+            ], 200);
+        } catch (\Exception $error) {
+            return response()->json([
+                'success' => false,
+                'message' => "Failed to delete post",
+                'error' => $error->getMessage(),
+            ], 500);
+        }
     }
 
 
