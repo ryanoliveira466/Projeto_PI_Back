@@ -45,16 +45,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/myProject/{projectSlug}', [PostController::class, 'myProject']);
     Route::post('/user/update-content/{projectSlug}', [AuthController::class, 'updateContent']);
     //Precisa fazer o script do front-end pegar o slug do user/projeto respectivamente
-    Route::delete('/user/destroy/{slug}', [UserController::class,'destroy']);
-    Route::delete('/post/destroy/{slug}', [PostController::class,'destroy']);//Fazer verificação se o usuário conectado é equivalente ao usuário que criou o projeto
+    Route::delete('/user/destroy/{slug}', [UserController::class,'destroy']);//Vou arrumar
+    Route::delete('/post/destroy/{slug}', [PostController::class,'destroy']);//Vou arrumar
+    Route::get('/user/listFollowing', [UserController::class, 'listFollowing']);
+    Route::get('/user/listFollowers', [UserController::class, 'listFollowers']);
 });
 
 // Like, view and follow system
 Route::post('/user/likeContent/{projectSlug}', [AuthController::class, 'likeContent']);
 Route::post('/user/viewProject/{projectSlug}', [AuthController::class, 'trackView']);
 Route::post('/user/followUser/{userSlug}', [AuthController::class, 'followUser']);
-Route::get('/user/listFollowers/{id}', [UserController::class, 'listFollowers']);
-Route::get('/user/listFollowing/{id}', [UserController::class, 'listFollowing']);
 
 // TEST RESTFUL Commands
 Route::resource('/user', UserController::class);

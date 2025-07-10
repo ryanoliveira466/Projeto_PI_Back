@@ -267,19 +267,20 @@ class UserController extends Controller
         }
     }
 
-    public function listFollowers(string $id){
+    public function listFollowers(Request $request){
     
 
         try {
-            $users = DB::table('followers')
+            $user = $request->user();
+            $followers = DB::table('followers')
             ->join('users','followers.user_id', '=','users.id')
             ->select('users.id','users.name')
-            ->where('followed_user_id','=',$id)
+            ->where('followed_user_id','=',$user->id)
             ->get();
     
     
             return response()->json([
-                'resultado' => $users
+                'followers' => $followers
             ]);
         } catch (\Exception $error) {
             return response()->json([
@@ -293,19 +294,20 @@ class UserController extends Controller
 
     }
 
-    public function listFollowing(string $id){
+    public function listFollowing(Request $request){
     
 
         try {
-            $users = DB::table('followers')
+            $user = $request->user();
+            $following = DB::table('followers')
         ->join('users','followers.followed_user_id', '=','users.id')
         ->select('users.id','users.name')
-        ->where('user_id','=',$id)
+        ->where('user_id','=',$user->id)
         ->get();
 
 
         return response()->json([
-            'resultado' => $users
+            'following' => $following
         ]);
         } catch (\Exception $error) {
             return response()->json([
