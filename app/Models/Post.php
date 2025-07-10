@@ -26,14 +26,8 @@ class Post extends Model
         'css',
         'html',
         'photo',
+        'tags'
     ];
-
-
-    public function user()
-    {
-        return $this->belongsTo(User::class); //Foreign key
-    }
-
 
 
     protected static function booted()
@@ -65,4 +59,25 @@ class Post extends Model
 
         // });
     }
+
+
+    //Whenever we have a pivot table, we need to relate one´s relationship(id) to another one´s relationship(id)
+    //Not obligated, just helpers
+
+    public function user()
+    {
+        return $this->belongsTo(User::class); //Foreign key
+    }
+
+
+    public function likedByUsers()
+    {
+        return $this->belongsToMany(User::class, 'liked_post');
+    }
+
+    public function viewedByUsers()
+{
+    return $this->belongsToMany(User::class, 'views');
+}
+
 }
