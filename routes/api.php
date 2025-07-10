@@ -45,7 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/myProject/{projectSlug}', [PostController::class, 'myProject']);
     Route::post('/user/update-content/{projectSlug}', [AuthController::class, 'updateContent']);
     //Precisa fazer o script do front-end pegar o slug do user/projeto respectivamente
-    Route::delete('/user/destroy/{slug}', [UserController::class,'destroy']);//Vou arrumar
+    Route::delete('/user/destroy', [UserController::class,'destroy']);//Vou arrumar
     Route::delete('/post/destroy/{slug}', [PostController::class,'destroy']);//Vou arrumar
     Route::get('/user/listFollowing', [UserController::class, 'listFollowing']);
     Route::get('/user/listFollowers', [UserController::class, 'listFollowers']);
