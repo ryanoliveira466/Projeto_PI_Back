@@ -60,10 +60,30 @@ class PostController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $postSlug)
     {
-        //
+        try {
+            $user = $request->user();
+
+            $project = Post::where('user_id', $user->id)
+                ->where('slug', $postSlug)
+                ->firstOrFail();
+
+            $project->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Post from user deleted successfully",
+            ], 200);
+        } catch (\Exception $error) {
+            return response()->json([
+                'success' => false,
+                'message' => "Failed to delete post from user",
+                'error' => $error->getMessage(),
+            ], 500);
+        }
     }
+
 
 
 
@@ -72,20 +92,32 @@ class PostController extends Controller
     {
         try {
             $user = $request->user();
-            $projects = Post::select('name', 'description', 'javascript', 'css', 'html', 'slug', 'photo')->where('user_id', $user->id)->get();;
+            $projects = Post::select('id', 'name', 'description', 'javascript', 'css', 'html', 'slug', 'photo', 'tags', 'likes', 'views')->where('user_id', $user->id)->get();
+
+            // Fetch liked post IDs for the current user
+            $likedPostIds = $user
+                ? $user->likedPosts()->pluck('post_id')->toArray()
+                : [];
+
+            // Add "liked" flag to each post
+            $projects->transform(function ($post) use ($likedPostIds) {
+                $post->liked = in_array($post->id, $likedPostIds);
+                return $post;
+            });
+
             return response()->json([
                 'success' => true,
                 'message' => 'Posts from user profile listed successfully',
                 'projectsCount' => $projects->count(),
                 'projects' => $projects,
                 'userSlug' => $user->slug
-            ],200);
+            ], 200);
         } catch (\Exception $error) {
             return response()->json([
                 'success' => false,
                 'message' => "Failed to select posts of user profile",
                 'error' => $error->getMessage(),
-            ],500);
+            ], 500);
         }
     }
 
@@ -96,7 +128,7 @@ class PostController extends Controller
     {
         try {
             $user = $request->user();
-            $project = Post::select('name', 'description', 'javascript', 'css', 'html', 'slug', 'photo')->where('user_id', $user->id)->where('slug', $projectSlug)->firstOrFail();
+            $project = Post::select('name', 'description', 'javascript', 'css', 'html', 'slug', 'photo', 'tags')->where('user_id', $user->id)->where('slug', $projectSlug)->firstOrFail();
             return response()->json([
                 'success' => true,
                 'message' => 'Post for editing from user profile listed successfully',
@@ -105,35 +137,139 @@ class PostController extends Controller
                 'userSlug' => $user->slug,
                 'userName' => $user->name,
                 'userImage' => $user->photo
-            ],200);
+            ], 200);
         } catch (\Exception $error) {
             return response()->json([
                 'success' => false,
                 'message' => "Failed to select Post for editing from user profile",
                 'error' => $error->getMessage(),
-            ],500);
+            ], 500);
         }
     }
 
 
 
-    public function userProjects($slug)
+    //
+    public function publicIndex()
     {
+
         try {
+            $posts = Post::with(['user:id,name,slug,photo,email'])
+                ->select('user_id', 'name', 'description', 'javascript', 'css', 'html', 'slug', 'photo')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Posts listed successfully',
+                'postsCount' => $posts->count(),
+                'posts' => $posts
+            ], 200);
+        } catch (\Exception $error) {
+            return response()->json([
+                'success' => false,
+                'message' => "Failed to list posts",
+                'error' => $error->getMessage(),
+            ], 500);
+        }
+    }
+
+
+
+    //With query
+    public function publicIndexQuery(Request $request)
+    {
+        $query = trim($request->input('query', ''));
+        $tags = trim($request->input('tags', ''));
+        $tagList = array_filter(array_map('trim', explode(',', $tags)));
+
+        if ($query === '' && empty($tagList)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No search criteria provided',
+                'postsCount' => 0,
+                'posts' => []
+            ], 200);
+        }
+
+        try {
+            $user = $request->user(); // May be null if unauthenticated
+
+            $posts = Post::with(['user:id,name,slug,photo,email'])
+                ->select('id', 'user_id', 'name', 'description', 'javascript', 'css', 'html', 'slug', 'photo', 'tags', 'likes', 'views')
+                ->when($query !== '', function ($q) use ($query) {
+                    $q->where('name', 'like', '%' . $query . '%');
+                })
+                ->when(!empty($tagList), function ($q) use ($tagList) {
+                    $q->where(function ($q2) use ($tagList) {
+                        foreach ($tagList as $tag) {
+                            $q2->orWhere('tags', 'like', '%' . $tag . '%');
+                        }
+                    });
+                })
+                ->get();
+
+            // Fetch liked post IDs for the current user
+            $likedPostIds = $user
+                ? $user->likedPosts()->pluck('post_id')->toArray()
+                : [];
+
+            // Add "liked" flag to each post
+            $posts->transform(function ($post) use ($likedPostIds) {
+                $post->liked = in_array($post->id, $likedPostIds);
+                return $post;
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Posts listed successfully',
+                'postsCount' => $posts->count(),
+                'posts' => $posts
+            ], 200);
+        } catch (\Exception $error) {
+            return response()->json([
+                'success' => false,
+                'message' => "Failed to list posts",
+                'error' => $error->getMessage(),
+            ], 500);
+        }
+    }
+
+
+
+
+    public function userProjects(Request $request)
+    {
+
+        $slug = trim($request->input('slug', ''));
+
+        try {
+            $userAuth = $request->user(); // May be null if unauthenticated
             $user = User::select('id')->where('slug', $slug)->firstOrFail();;
-            $projects = Post::select('name', 'description', 'javascript', 'css', 'html', 'slug', 'photo')->where('user_id', $user->id)->get();
+            $posts = Post::select('id', 'name', 'description', 'javascript', 'css', 'html', 'slug', 'photo', 'tags', 'likes', 'views')->where('user_id', $user->id)->get();
+
+            // Fetch liked post IDs for the current user
+            $likedPostIds = $userAuth
+                ? $userAuth->likedPosts()->pluck('post_id')->toArray()
+                : [];
+
+            // Add "liked" flag to each post
+            $posts->transform(function ($post) use ($likedPostIds) {
+                $post->liked = in_array($post->id, $likedPostIds);
+                return $post;
+            });
+
             return response()->json([
                 'success' => true,
                 'message' => 'Posts from user listed successfully by slug',
-                'projectsCount' => $projects->count(),
-                'projects' => $projects
-            ],200);
+                'projectsCount' => $posts->count(),
+                'projects' => $posts,
+            ], 200);
         } catch (\Exception $error) {
             return response()->json([
                 'success' => false,
                 'message' => "Failed to select posts of user by slug",
                 'error' => $error->getMessage(),
-            ],500);
+            ], 500);
         }
     }
 
@@ -142,8 +278,8 @@ class PostController extends Controller
     public function showBySlug($userSlug, $projectSLug)
     {
         try {
-            $user = User::select('id','name','photo')->where('slug', $userSlug)->firstOrFail();;
-            $project = Post::select('name', 'description', 'javascript', 'css', 'html' , 'photo')->where('slug', $projectSLug)->where('user_id', $user->id)->firstOrFail();
+            $user = User::select('id', 'name', 'photo')->where('slug', $userSlug)->firstOrFail();;
+            $project = Post::select('name', 'description', 'javascript', 'css', 'html', 'photo')->where('slug', $projectSLug)->where('user_id', $user->id)->firstOrFail();
             return response()->json([
                 'success' => true,
                 'message' => 'Post from user listed successfully by slug',
@@ -151,14 +287,13 @@ class PostController extends Controller
                 'project' => $project,
                 'userName' => $user->name,
                 'userImage' => $user->photo
-            ],200);
+            ], 200);
         } catch (\Exception $error) {
             return response()->json([
                 'success' => false,
                 'message' => "Failed to select post of user by slug",
                 'error' => $error->getMessage(),
-            ],500);
+            ], 500);
         }
     }
-
 }

@@ -44,17 +44,31 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/myProjects', [PostController::class, 'myProjects']);
     Route::get('/user/myProject/{projectSlug}', [PostController::class, 'myProject']);
     Route::post('/user/update-content/{projectSlug}', [AuthController::class, 'updateContent']);
+    Route::delete('/user/destroy', [UserController::class,'destroy']);
+    Route::delete('/post/destroy/{projectSlug}', [PostController::class,'destroy']);
 });
+
+// Like, view and follow system
+Route::post('/user/likeContent/{projectSlug}', [AuthController::class, 'likeContent']);
+Route::post('/user/viewProject/{projectSlug}', [AuthController::class, 'trackView']);
+Route::post('/user/followUser/{userSlug}', [AuthController::class, 'followUser']);
+
+//User followers and following
+Route::get('/user/listFollowers', [UserController::class, 'listFollowers']);
+Route::get('/user/listFollowing', [UserController::class, 'listFollowing']);
 
 // TEST RESTFUL Commands
 Route::resource('/user', UserController::class);
 
 // PUBLIC routes
 Route::post('/register', [AuthController::class, 'register']);
-Route::get('/users/public', [UserController::class, 'publicIndex']); //Search bar user
+// Route::get('/users/public', [UserController::class, 'publicIndex']); //Search bar user
+Route::get('/users/public', [UserController::class, 'publicIndexQuery']); //Search bar user with query first
 Route::get('/user/slug/{slug}', [UserController::class, 'showBySlug']); //Profile user public link for each
 
-Route::get('/projects/user/{slug}', [PostController::class, 'userProjects']); //Projects of the user public on member page
+// Route::get('/projects/public', [PostController::class, 'publicIndex']); //Search bar projects
+Route::get('/projects/public', [PostController::class, 'publicIndexQuery']); //Search bar projects with query first
+Route::get('/projects/user', [PostController::class, 'userProjects']); //Projects of the user public on member page
 Route::get('/project/slug/{userSlug}/{projectSlug}', [PostController::class, 'showBySlug']); //Projects user public link for each
 
 
@@ -73,7 +87,6 @@ Route::get('/email/verify/{id}/{hash}', function ($id, $hash) {
         event(new Verified($user));
         return redirect('http://127.0.0.1:5501/email-verified-success.html'); // Redirect to your frontend
     }
-
 })->middleware('signed')->name('verification.verify');
 
 
@@ -191,4 +204,3 @@ Route::post('/reset-password', function (Request $request) {
         ], 500);
     }
 });
-
